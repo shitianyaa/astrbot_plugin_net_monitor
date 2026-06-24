@@ -1,0 +1,37 @@
+{
+  "sample_interval": {
+    "description": "采集周期（秒）",
+    "type": "int",
+    "default": 2,
+    "hint": "每隔多少秒读取一次系统网卡计数器。范围 1~300，建议 1~5 秒。过短增加 CPU 开销，过长速率不准。",
+    "obvious_hint": false
+  },
+  "window_seconds": {
+    "description": "平均速率窗口（秒）",
+    "type": "int",
+    "default": 5,
+    "hint": "计算「近 N 秒平均上行/下行速率」的窗口长度。范围 1~60，默认 5。需 >= 采集周期，否则自动收敛为采集周期。",
+    "obvious_hint": false
+  },
+  "include_virtual_interfaces": {
+    "description": "统计虚拟/隧道网卡",
+    "type": "bool",
+    "default": false,
+    "hint": "默认关闭，会排除 loopback、Docker、网桥、VPN、虚拟化等常见接口。开启后不应用默认黑名单。",
+    "obvious_hint": false
+  },
+  "include_interfaces": {
+    "description": "只统计这些网卡",
+    "type": "list",
+    "default": [],
+    "hint": "可填写网卡名或 glob，例如 eth*、WLAN*。非空时只统计匹配项，并绕过默认虚拟网卡黑名单。",
+    "obvious_hint": false
+  },
+  "exclude_interfaces": {
+    "description": "排除这些网卡",
+    "type": "list",
+    "default": [],
+    "hint": "可填写网卡名或 glob，例如 docker*、*VPN*。该规则最后应用，优先级最高。",
+    "obvious_hint": false
+  }
+}

@@ -3,7 +3,7 @@
 设计目标：
 - 系统级网络流量监控（Linux /proc/net/dev、Windows/macOS/BSD via psutil）。
 - 后台轻量采集循环算滑动窗口平均速率，/net 指令直接读缓存，数值稳。
-- 纯实时，不落盘、不存历史：插件重载 / 系统重启即清零，只为演示。
+- 持久化当月累计流量；实时速率与本次启动累计仍只保存在内存。
 
 数据流：
   provider.snapshot() → monitor.sample()（后台循环） → 缓存 stats
@@ -18,12 +18,15 @@ import time
 from astrbot.api import AstrBotConfig, logger
 from astrbot.api.event import AstrMessageEvent, filter
 from astrbot.api.star import Context, Star
+from astrbot.core.utils.astrbot_path import get_astrbot_data_path
 
 from .formatter import human_bytes, human_duration, human_speed
 from .monitor import NetMonitor
+from .monthly_usage import MonthlyTrafficStore
 from .provider import NetProviderError, select_provider
 
 _PLUGIN_TAG = "[NetMonitor]"
+_PLUGIN_NAME = "astrbot_plugin_net_monitor"
 
 # 默认采集周期（秒）。太短会增加 CPU 开销；太长速率不准。
 DEFAULT_INTERVAL = 2
@@ -35,7 +38,7 @@ WINDOW_RANGE = (1, 60)
 
 
 class NetMonitorPlugin(Star):
-    """系统网络流量实时监控插件（demo 版，无持久化）。"""
+    """系统网络流量实时监控插件。"""
 
     def __init__(self, context: Context, config: AstrBotConfig):
         super().__init__(context)
@@ -64,6 +67,10 @@ class NetMonitorPlugin(Star):
         )
         include_interfaces = config.get("include_interfaces", [])
         exclude_interfaces = config.get("exclude_interfaces", [])
+
+        data_dir = get_astrbot_data_path() / "plugin_data" / _PLUGIN_NAME
+        self._monthly_store = MonthlyTrafficStore(data_dir / "monthly_usage.json")
+        self._monthly_store.snapshot()
 
         # 选择数据源。失败则降级为「空监控」，保证插件仍能加载、指令仍可响应。
         self._monitor_window_seconds = window_seconds
@@ -107,6 +114,7 @@ class NetMonitorPlugin(Star):
                 await self._loop_task
             except asyncio.CancelledError:
                 pass
+        self._monthly_store.flush()
         logger.info(f"{_PLUGIN_TAG} 插件已停止")
 
     def _ensure_loop_started(self, reason: str) -> None:
@@ -166,6 +174,11 @@ class NetMonitorPlugin(Star):
                 stats = self._monitor.sample() if self._monitor else None
                 if stats is None:
                     continue
+                if not stats.error:
+                    self._monthly_store.add(
+                        stats.up_delta_bytes,
+                        stats.down_delta_bytes,
+                    )
                 self._last_stats = stats
                 if stats.error:
                     logger.warning(f"{_PLUGIN_TAG} 数据源错误：{stats.error}")
@@ -189,6 +202,7 @@ class NetMonitorPlugin(Star):
         # 窗口实际覆盖时长：启动不足窗口长度时按实际时长显示，避免「近 5s」其实只有 1s
         span = min(stats.window_span_seconds, float(self._monitor_window_seconds))
         span_text = f"{span:.1f}s" if span else "—"
+        monthly = self._monthly_store.snapshot()
         msg = (
             f"📡 网络流量监控\n"
             "─────────────\n"
@@ -199,9 +213,9 @@ class NetMonitorPlugin(Star):
             f"  ⬆ {human_speed(stats.up_speed_bps)}\n"
             f"  ⬇ {human_speed(stats.down_speed_bps)}\n"
             "─────────────\n"
-            "开机以来累计\n"
-            f"  ⬆ 上传 {human_bytes(stats.system_up_bytes)}\n"
-            f"  ⬇ 下载 {human_bytes(stats.system_down_bytes)}\n"
+            f"当月累计（{monthly.month}）\n"
+            f"  ⬆ 上传 {human_bytes(monthly.up_bytes)}\n"
+            f"  ⬇ 下载 {human_bytes(monthly.down_bytes)}\n"
             "本次启动累计\n"
             f"  ⬆ 上传 {human_bytes(stats.session_up_bytes)}\n"
             f"  ⬇ 下载 {human_bytes(stats.session_down_bytes)}\n"

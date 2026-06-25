@@ -28,6 +28,9 @@ class TrafficStats:
     # 本周期瞬时速率（字节/秒）
     up_speed_bps: float = 0.0
     down_speed_bps: float = 0.0
+    # 本周期新增流量（字节），供外层持久化月累计使用
+    up_delta_bytes: int = 0
+    down_delta_bytes: int = 0
     # 滑动窗口平均速率（字节/秒），展示用主值
     up_speed_avg_bps: float = 0.0
     down_speed_avg_bps: float = 0.0
@@ -211,6 +214,8 @@ class NetMonitor:
         return TrafficStats(
             up_speed_bps=up_speed,
             down_speed_bps=down_speed,
+            up_delta_bytes=up_delta,
+            down_delta_bytes=down_delta,
             up_speed_avg_bps=up_avg,
             down_speed_avg_bps=down_avg,
             window_span_seconds=span,

@@ -82,11 +82,37 @@ class NetMonitorTest(unittest.TestCase):
 
         self.assertEqual(stats.up_speed_bps, 30)
         self.assertEqual(stats.down_speed_bps, 25)
+        self.assertEqual(stats.up_delta_bytes, 60)
+        self.assertEqual(stats.down_delta_bytes, 50)
         self.assertEqual(stats.up_speed_avg_bps, 30)
         self.assertEqual(stats.down_speed_avg_bps, 25)
         self.assertEqual(stats.window_span_seconds, 2)
         self.assertEqual(stats.session_up_bytes, 60)
         self.assertEqual(stats.session_down_bytes, 50)
+
+    def test_zero_delta_and_window_average(self) -> None:
+        monitor = NetMonitor(
+            SequenceProvider(
+                [
+                    snap(1.0, {"eth0": (100, 200)}),
+                    snap(3.0, {"eth0": (100, 200)}),
+                ]
+            ),
+            window_seconds=5,
+        )
+
+        monitor.sample()
+        stats = monitor.sample()
+
+        self.assertEqual(stats.up_speed_bps, 0)
+        self.assertEqual(stats.down_speed_bps, 0)
+        self.assertEqual(stats.up_delta_bytes, 0)
+        self.assertEqual(stats.down_delta_bytes, 0)
+        self.assertEqual(stats.up_speed_avg_bps, 0)
+        self.assertEqual(stats.down_speed_avg_bps, 0)
+        self.assertEqual(stats.window_span_seconds, 2)
+        self.assertEqual(stats.session_up_bytes, 0)
+        self.assertEqual(stats.session_down_bytes, 0)
 
     def test_new_interface_does_not_create_delta_jump(self) -> None:
         monitor = NetMonitor(

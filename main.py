@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import asyncio
 import time
+from pathlib import Path
 from typing import TypeVar, cast
 
 from astrbot.api import AstrBotConfig, logger
@@ -70,7 +71,7 @@ class NetMonitorPlugin(Star):
         include_interfaces = self._config_get("include_interfaces", [])
         exclude_interfaces = self._config_get("exclude_interfaces", [])
 
-        data_dir = get_astrbot_data_path() / "plugin_data" / _PLUGIN_NAME
+        data_dir = Path(get_astrbot_data_path()) / "plugin_data" / _PLUGIN_NAME
         self._monthly_store = MonthlyTrafficStore(data_dir / "monthly_usage.json")
         self._monthly_store.snapshot()
 

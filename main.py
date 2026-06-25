@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import asyncio
 import time
+from typing import TypeVar, cast
 
 from astrbot.api import AstrBotConfig, logger
 from astrbot.api.event import AstrMessageEvent, filter
@@ -27,6 +28,7 @@ from .provider import NetProviderError, select_provider
 
 _PLUGIN_TAG = "[NetMonitor]"
 _PLUGIN_NAME = "astrbot_plugin_net_monitor"
+_T = TypeVar("_T")
 
 # 默认采集周期（秒）。太短会增加 CPU 开销；太长速率不准。
 DEFAULT_INTERVAL = 2
@@ -40,18 +42,18 @@ WINDOW_RANGE = (1, 60)
 class NetMonitorPlugin(Star):
     """系统网络流量实时监控插件。"""
 
-    def __init__(self, context: Context, config: AstrBotConfig):
+    def __init__(self, context: Context, config: AstrBotConfig | None = None):
         super().__init__(context)
         self.config = config
 
         self._interval = self._clamp(
-            config.get("sample_interval", DEFAULT_INTERVAL),
+            self._config_get("sample_interval", DEFAULT_INTERVAL),
             DEFAULT_INTERVAL,
             INTERVAL_RANGE,
         )
         # 滑动窗口长度（秒），用于算平均速率。窗口需 >= 采集周期才有意义。
         window_seconds = self._clamp(
-            config.get("window_seconds", DEFAULT_WINDOW),
+            self._config_get("window_seconds", DEFAULT_WINDOW),
             DEFAULT_WINDOW,
             WINDOW_RANGE,
         )
@@ -62,11 +64,11 @@ class NetMonitorPlugin(Star):
             )
 
         include_virtual = self._bool_config(
-            config.get("include_virtual_interfaces", False),
+            self._config_get("include_virtual_interfaces", False),
             False,
         )
-        include_interfaces = config.get("include_interfaces", [])
-        exclude_interfaces = config.get("exclude_interfaces", [])
+        include_interfaces = self._config_get("include_interfaces", [])
+        exclude_interfaces = self._config_get("exclude_interfaces", [])
 
         data_dir = get_astrbot_data_path() / "plugin_data" / _PLUGIN_NAME
         self._monthly_store = MonthlyTrafficStore(data_dir / "monthly_usage.json")
@@ -131,6 +133,11 @@ class NetMonitorPlugin(Star):
             logger.debug(f"{_PLUGIN_TAG} {reason} 阶段无事件循环，等待下一层兜底")
 
     # ========== 配置解析 ==========
+
+    def _config_get(self, key: str, default: _T) -> _T:
+        if self.config is None:
+            return default
+        return cast(_T, self.config.get(key, default))
 
     @staticmethod
     def _clamp(raw, default, value_range):

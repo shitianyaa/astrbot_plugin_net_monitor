@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import asyncio
 import time
+from typing import TypeVar, cast
 
 from astrbot.api import AstrBotConfig, logger
 from astrbot.api.event import AstrMessageEvent, filter
@@ -27,6 +28,7 @@ from .provider import NetProviderError, select_provider
 
 _PLUGIN_TAG = "[NetMonitor]"
 _PLUGIN_NAME = "astrbot_plugin_net_monitor"
+_T = TypeVar("_T")
 
 # 默认采集周期（秒）。太短会增加 CPU 开销；太长速率不准。
 DEFAULT_INTERVAL = 2
@@ -132,10 +134,10 @@ class NetMonitorPlugin(Star):
 
     # ========== 配置解析 ==========
 
-    def _config_get(self, key: str, default):
+    def _config_get(self, key: str, default: _T) -> _T:
         if self.config is None:
             return default
-        return self.config.get(key, default)
+        return cast(_T, self.config.get(key, default))
 
     @staticmethod
     def _clamp(raw, default, value_range):

@@ -82,6 +82,8 @@ class NetMonitorTest(unittest.TestCase):
 
         self.assertEqual(stats.up_speed_bps, 30)
         self.assertEqual(stats.down_speed_bps, 25)
+        self.assertEqual(stats.up_delta_bytes, 60)
+        self.assertEqual(stats.down_delta_bytes, 50)
         self.assertEqual(stats.up_speed_avg_bps, 30)
         self.assertEqual(stats.down_speed_avg_bps, 25)
         self.assertEqual(stats.window_span_seconds, 2)

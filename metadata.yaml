@@ -1,8 +1,8 @@
 name: astrbot_plugin_net_monitor
-version: 0.1.0
-display_name: 网络流量监控(Demo)
-desc: 系统级网络流量实时监控（Linux/Windows/macOS/BSD），后台采集滑动窗口平均速率，纯实时不落盘
-description: 系统级网络流量实时监控（Linux/Windows/macOS/BSD），后台采集滑动窗口平均速率，纯实时不落盘
+version: 0.2.0
+display_name: 网络流量监控
+desc: 系统级网络流量监控（Linux/Windows/macOS/BSD），支持实时速率与当月累计
+description: 系统级网络流量监控（Linux/Windows/macOS/BSD），支持实时速率与当月累计
 author: you
 repo: ""
 keywords:

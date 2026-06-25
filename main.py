@@ -114,6 +114,7 @@ class NetMonitorPlugin(Star):
                 await self._loop_task
             except asyncio.CancelledError:
                 pass
+        self._monthly_store.flush()
         logger.info(f"{_PLUGIN_TAG} 插件已停止")
 
     def _ensure_loop_started(self, reason: str) -> None:

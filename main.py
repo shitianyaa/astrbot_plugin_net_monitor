@@ -40,6 +40,13 @@ DEFAULT_WINDOW = 5
 WINDOW_RANGE = (1, 60)
 
 
+def _astrbot_data_path() -> Path:
+    data_path = get_astrbot_data_path()
+    if isinstance(data_path, Path):
+        return data_path
+    return Path(data_path)
+
+
 class NetMonitorPlugin(Star):
     """系统网络流量实时监控插件。"""
 
@@ -71,7 +78,7 @@ class NetMonitorPlugin(Star):
         include_interfaces = self._config_get("include_interfaces", [])
         exclude_interfaces = self._config_get("exclude_interfaces", [])
 
-        data_dir = Path(get_astrbot_data_path()) / "plugin_data" / _PLUGIN_NAME
+        data_dir = _astrbot_data_path() / "plugin_data" / _PLUGIN_NAME
         self._monthly_store = MonthlyTrafficStore(data_dir / "monthly_usage.json")
         self._monthly_store.snapshot()
 

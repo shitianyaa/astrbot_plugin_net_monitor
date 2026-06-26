@@ -3,7 +3,7 @@
 设计目标：
 - 系统级网络流量监控（Linux /proc/net/dev、Windows/macOS/BSD via psutil）。
 - 后台轻量采集循环算滑动窗口平均速率，/net 指令直接读缓存，数值稳。
-- 持久化当月累计流量；实时速率与本次启动累计仍只保存在内存。
+- 持久化本月已记录流量；实时速率与本次启动累计仍只保存在内存。
 
 数据流：
   provider.snapshot() → monitor.sample()（后台循环） → 缓存 stats
@@ -228,7 +228,7 @@ class NetMonitorPlugin(Star):
             f"  ⬆ {human_speed(stats.up_speed_bps)}\n"
             f"  ⬇ {human_speed(stats.down_speed_bps)}\n"
             "─────────────\n"
-            f"当月累计（{monthly.month}）\n"
+            f"本月已记录（{monthly.month}）\n"
             f"  ⬆ 上传 {human_bytes(monthly.up_bytes)}\n"
             f"  ⬇ 下载 {human_bytes(monthly.down_bytes)}\n"
             "本次启动累计\n"
